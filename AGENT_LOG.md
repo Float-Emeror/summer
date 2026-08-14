@@ -49,3 +49,12 @@
 - Subagent output: 生成基线提交并确认项目文件已准备就绪，后续使用 git push 同步到 `Float-Emeror/summer`。
 - Human intervention: 规范提交分支、补充 `PLAN.md` 中的 commit hash 记录，并确保真实凭据未进入仓库；对已存在的 .env 暂不提交。
 - Lesson: 最终的可审计性来自“可追踪的任务历史 + 安全检查”，而不只是代码本身。
+
+## 2026-08-14 14:20
+- Task: T2. 登录前邮箱验证门禁修复
+- Triggered skill: test-driven-development
+- Key prompt: “在 auth 模块中补一个失败测试，验证 EMAIL_VERIFICATION_REQUIRED=true 时未验证用户不能登录，并实现最小修复。”
+- Subagent output: 先红为止，新增回归测试失败，确认登录未校验邮箱验证状态；随后通过最小修复让用例变绿。
+- Human intervention: 将校验条件落在 `AuthService.login`，确保只有在 `EMAIL_VERIFICATION_REQUIRED` 开启时才阻止未验证用户登录；同时保留已验证/关闭验证的正常登录路径。
+- Verification: `cd apps && corepack pnpm --filter @campus-team/api test -- --runInBand --watch=false` -> 2/2 tests passed.
+- Commit: `a6d7416d6c3f7597eb7a2f3f3e9465ae816c3e19`
