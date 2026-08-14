@@ -85,9 +85,10 @@ export class AdminRepository {
 
   resolveAppeal(actorId: string, id: string, decision: string) {
     return this.prisma.$transaction(async (tx) => {
+      const status = normalizeAppealDecision(decision);
       const appeal = await tx.appeal.update({
         where: { id },
-        data: { status: AppealStatus.APPROVED, resolvedAt: new Date() },
+        data: { status, resolvedAt: new Date() },
       });
       await tx.auditLog.create({
         data: {
@@ -213,4 +214,10 @@ function paged<T>(items: T[], total: number, query: { page: number; pageSize: nu
       totalPages: Math.max(1, Math.ceil(total / query.pageSize)),
     },
   };
+}
+
+function normalizeAppealDecision(decision: string): AppealStatus {
+  const normalized = decision.trim().toUpperCase();
+  if (normalized === 'APPROVED') return AppealStatus.APPROVED;
+  return AppealStatus.REJECTED;
 }
