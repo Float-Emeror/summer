@@ -119,7 +119,7 @@ T8: AI 知识地图模块
 - T6. 通知与消息：已完成，commit = `d2bcedf`，说明：事件总线与消息模块已纳入工程结构。
 - T7. 管理审核与信用体系：已完成，commit = `d2bcedf`，说明：管理员审核、信用规则与审计结构已落地。
 - T8. AI 知识地图模块：已完成，commit = `d2bcedf`，说明：AI fallback 与知识地图能力已具备基础实现。
-- T9. 安全 / 分发 / CI / 文档整合：已完成，commit = `d2bcedf`，说明：当前提交已收口到 README、Docker、CI 与安全要求。
+- T9. 安全 / 分发 / CI / 文档整合：已完成，commit = `319090a`，说明：修复 Alpine Docker 构建缺少 `python3 / make / g++` 导致 `bcrypt` 编译失败，补齐 CI / 分发依赖安全与审计记录。
 
 > 说明：本文件按 Superpowers 要求持续更新。每当一个 task 完成、被提交到 Git 后，需追加对应 commit hash，并在 AGENT_LOG.md 补充人工修正与验证摘要。
 

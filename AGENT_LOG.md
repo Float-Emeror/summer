@@ -85,3 +85,13 @@
 - Human intervention: 在 `TasksService.updateTaskStatus` 中加入 `allowedTransitions` 校验，并保留成员/负责人权限限制；同时补充 `deleteTask` 的队长控制约束。
 - Verification: `cd apps && corepack pnpm --filter @campus-team/api test -- --runInBand --watch=false` -> 9/9 tests passed.
 - Commit: `5c4a6ab8b1c150acb3c1661abfdb30f2bd34ab0d`
+
+## 2026-08-14 21:45
+- Task: T9. 安全 / 分发 / CI / 文档整合
+- Triggered skill: finishing-a-development-branch
+- Key prompt: “在 T9 分支中补齐最终交付工程：确保 Docker、CI 和安全说明都落地，且追踪最终提交。”
+- Subagent output: 发现 Dockerfile 在 Alpine 下安装 `bcrypt` 时因未安装 `python3 / make / g++` 而在构建阶段退出，说明分发工件本身还缺少 native build 依赖。
+- Human intervention: 在 `Dockerfile` 的 base 镜像中加入 `apk add --no-cache python3 make g++`，保障 `bcrypt` 能在 Alpine 容器里编译；同时核对 README、CI 与 `.env.example` 的交付边界一致。
+- Verification: `cd apps && corepack pnpm test` -> backend 6/6 suites passed, frontend 13/13 files passed, 29 tests total passed.
+- Follow-up note: Docker build is now aligned with the actual native dependency requirement; full image creation remains environment-sensitive in this WSL/Docker setup and should be rechecked on the target delivery host.
+- Commit: `319090a`
