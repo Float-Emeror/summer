@@ -1,0 +1,452 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum TeamType {
+  COURSE
+  COMPETITION
+  VOLUNTEER
+  CLUB
+  BOUNTY
+}
+
+enum TeamStatus {
+  OPEN
+  FULL
+  CLOSED
+  COMPLETED
+}
+
+enum MemberRole {
+  OWNER
+  MEMBER
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELED
+}
+
+enum TaskStatus {
+  TODO
+  DOING
+  DONE
+  CONFIRMED
+}
+
+enum NotificationType {
+  APPLICATION_APPROVED
+  TASK_ASSIGNED
+  TASK_COMPLETED
+  REVIEW_CREATED
+  CREDIT_UPDATED
+  BOUNTY_ACCEPTED
+  MESSAGE_MENTIONED
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  REJECTED
+}
+
+enum AppealStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id                      String                   @id @default(cuid())
+  studentNo               String                   @unique
+  email                   String                   @unique
+  passwordHash            String
+  role                    UserRole                 @default(STUDENT)
+  status                  UserStatus               @default(ACTIVE)
+  disabledAt              DateTime?
+  disabledReason          String?
+  emailVerifiedAt         DateTime?
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  profile                 UserProfile?
+  availabilitySlots       AvailabilitySlot[]
+  ownedTeams              Team[]                   @relation("TeamOwner")
+  memberships             TeamMember[]
+  applications            Application[]
+  taskAssignments         TaskAssignment[]
+  reviewsWritten          Review[]                 @relation("Reviewer")
+  reviewsReceived         Review[]                 @relation("Reviewee")
+  creditSnapshots         CreditSnapshot[]
+  messages                Message[]
+  notifications           Notification[]
+  reportsCreated          Report[]                 @relation("ReportCreator")
+  reportsTargeting        Report[]                 @relation("ReportedUser")
+  appeals                 Appeal[]
+  auditLogs               AuditLog[]               @relation("AuditActor")
+  favorites               Favorite[]
+  emailVerificationTokens EmailVerificationToken[]
+  aiProjects             AiProject[]
+
+  @@index([role])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model AiProject {
+  id              String           @id @default(cuid())
+  ownerId         String
+  name            String
+  sourceType      String
+  sourcePath      String
+  projectType     String
+  summary         String           @db.Text
+  readmeSummary   String?          @db.Text
+  fileCount       Int              @default(0)
+  moduleCount     Int              @default(0)
+  topLevelDirs    Json?
+  keyFiles        Json?
+  configFiles     Json?
+  mainEntryPoints Json?
+  techStack       Json?
+  onboardingSteps Json?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  owner           User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  documents       AiDocument[]
+  conversations   AiConversation[]
+
+  @@index([ownerId])
+  @@index([createdAt])
+}
+
+model AiDocument {
+  id        String    @id @default(cuid())
+  projectId String
+  title     String
+  docType   String
+  content   String    @db.Text
+  createdAt DateTime  @default(now())
+  project   AiProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([createdAt])
+}
+
+model AiConversation {
+  id        String    @id @default(cuid())
+  projectId String
+  question  String    @db.Text
+  answer    String    @db.Text
+  citations Json?
+  createdAt DateTime  @default(now())
+  project   AiProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([createdAt])
+}
+
+model AiConfig {
+  id            String   @id @default(cuid())
+  provider      String   @unique
+  keyCiphertext String   @db.Text
+  keyHint       String?
+  status        String   @default("configured")
+  updatedAt     DateTime @updatedAt
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model UserProfile {
+  id           String     @id @default(cuid())
+  userId       String     @unique
+  nickname     String
+  college      String?
+  grade        String?
+  bio          String?
+  completeness Int        @default(0)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skills       SkillTag[] @relation("ProfileSkills")
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([college])
+  @@index([grade])
+}
+
+model SkillTag {
+  id       String        @id @default(cuid())
+  name     String        @unique
+  profiles UserProfile[] @relation("ProfileSkills")
+  teams    Team[]        @relation("TeamSkills")
+
+  @@index([name])
+}
+
+model AvailabilitySlot {
+  id        String   @id @default(cuid())
+  userId    String
+  weekday   Int
+  startTime String
+  endTime   String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([weekday])
+}
+
+model Team {
+  id             String        @id @default(cuid())
+  ownerId        String
+  teamCode       String?       @unique
+  type           TeamType
+  title          String
+  description    String        @db.Text
+  maxMembers     Int
+  status         TeamStatus    @default(OPEN)
+  deadline       DateTime?
+  bountyAmount   Decimal?      @db.Decimal(10, 2)
+  owner          User          @relation("TeamOwner", fields: [ownerId], references: [id])
+  requiredSkills SkillTag[]    @relation("TeamSkills")
+  members        TeamMember[]
+  applications   Application[]
+  tasks          Task[]
+  reviews        Review[]
+  messages       Message[]
+  reports        Report[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  favoritedBy Favorite[]
+
+  @@index([ownerId])
+  @@index([teamCode])
+  @@index([type])
+  @@index([status])
+  @@index([deadline])
+  @@index([createdAt])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  teamId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, teamId]) // 确保一个用户不能重复收藏同一个队伍
+  @@index([userId])
+  @@index([teamId])
+}
+
+model TeamMember {
+  id       String     @id @default(cuid())
+  teamId   String
+  userId   String
+  role     MemberRole @default(MEMBER)
+  joinedAt DateTime   @default(now())
+  team     Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+}
+
+model Application {
+  id          String            @id @default(cuid())
+  teamId      String
+  applicantId String
+  reason      String            @db.Text
+  status      ApplicationStatus @default(PENDING)
+  reviewedAt  DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  team        Team              @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  applicant   User              @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, applicantId])
+  @@index([teamId])
+  @@index([applicantId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Task {
+  id          String           @id @default(cuid())
+  teamId      String
+  title       String
+  description String?          @db.Text
+  status      TaskStatus       @default(TODO)
+  deadline    DateTime?
+  confirmedAt DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  team        Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  assignments TaskAssignment[]
+
+  @@index([teamId])
+  @@index([status])
+  @@index([deadline])
+  @@index([createdAt])
+}
+
+model TaskAssignment {
+  id        String   @id @default(cuid())
+  taskId    String
+  userId    String
+  createdAt DateTime @default(now())
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId])
+  @@index([taskId])
+  @@index([userId])
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  teamId     String
+  reviewerId String
+  revieweeId String
+  rating     Int
+  tags       Json?
+  comment    String   @db.Text
+  isHidden   Boolean  @default(false)
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+  team       Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  reviewer   User     @relation("Reviewer", fields: [reviewerId], references: [id])
+  reviewee   User     @relation("Reviewee", fields: [revieweeId], references: [id])
+  appeals    Appeal[]
+
+  @@unique([teamId, reviewerId, revieweeId])
+  @@index([teamId])
+  @@index([reviewerId])
+  @@index([revieweeId])
+  @@index([createdAt])
+}
+
+model CreditSnapshot {
+  id        String   @id @default(cuid())
+  userId    String
+  score     Int
+  reason    String
+  metadata  Json?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  teamId    String
+  senderId  String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  sender    User     @relation(fields: [senderId], references: [id])
+
+  @@index([teamId])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String?          @db.Text
+  readAt    DateTime?
+  metadata  Json?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model Report {
+  id             String       @id @default(cuid())
+  reporterId     String
+  reportedUserId String?
+  teamId         String?
+  reason         String       @db.Text
+  status         ReportStatus @default(PENDING)
+  createdAt      DateTime     @default(now())
+  resolvedAt     DateTime?
+  reporter       User         @relation("ReportCreator", fields: [reporterId], references: [id])
+  reportedUser   User?        @relation("ReportedUser", fields: [reportedUserId], references: [id])
+  team           Team?        @relation(fields: [teamId], references: [id])
+
+  @@index([reporterId])
+  @@index([reportedUserId])
+  @@index([teamId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Appeal {
+  id         String       @id @default(cuid())
+  reviewId   String
+  userId     String
+  reason     String       @db.Text
+  status     AppealStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
+  resolvedAt DateTime?
+  review     Review       @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  target    String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+  actor     User?    @relation("AuditActor", fields: [actorId], references: [id])
+
+  @@index([actorId])
+  @@index([action])
+  @@index([createdAt])
+}

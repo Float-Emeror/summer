@@ -1,0 +1,41 @@
+image: node:20
+
+stages:
+  - install
+  - test
+  - package
+
+cache:
+  key:
+    files:
+      - apps/pnpm-lock.yaml
+  paths:
+    - apps/node_modules/
+    - apps/.pnpm-store/
+
+install-deps:
+  stage: install
+  script:
+    - corepack enable
+    - cd apps
+    - pnpm install --frozen-lockfile
+  artifacts:
+    expire_in: 1 hour
+
+unit-test:
+  stage: test
+  needs: [install-deps]
+  script:
+    - corepack enable
+    - cd apps
+    - pnpm test
+  allow_failure: false
+
+build-image:
+  stage: package
+  needs: [unit-test]
+  script:
+    - docker build -t campus-team-platform:ci .
+  only:
+    - main
+    - master

@@ -1,0 +1,28 @@
+{
+  "name": "campus-team-platform",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Campus team registration platform Phase 2 workspace.",
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "dev": "corepack pnpm --parallel --filter @campus-team/api --filter @campus-team/web dev",
+    "dev:ui-config": "corepack pnpm --filter @campus-team/ui-config dev",
+    "build": "corepack pnpm -r build",
+    "test": "corepack pnpm -r test",
+    "lint": "corepack pnpm -r lint",
+    "format": "corepack pnpm -r format",
+    "prisma:format": "corepack pnpm --filter @campus-team/api prisma:format",
+    "prisma:push": "corepack pnpm --filter @campus-team/api prisma:push",
+    "seed:test-user": "corepack pnpm --filter @campus-team/api seed:test-user",
+    "export:accounts-cache": "corepack pnpm --filter @campus-team/api export:accounts-cache",
+    "start:dev": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-dev.ps1",
+    "postinstall": "corepack pnpm --filter @campus-team/api prisma:generate"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3"
+  }
+}
