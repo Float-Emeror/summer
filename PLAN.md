@@ -108,6 +108,21 @@ T8: AI 知识地图模块
 - 每个子任务完成后，都需要在 `AGENT_LOG.md` 中写入时间戳、触发 skill、关键 prompt 和人工修正。
 - 每个 task 结束后都需要确认 spec 合规性与验证结果，不接受“看起来可用”的实现。
 
+## 4.1 任务执行状态（持续更新）
+
+- T0. 需求与工程边界确认：已完成，commit = `d2bcedf`，说明：完成项目定义、风险边界和工程交付基线。
+- T1. 基础环境与配置：已完成，commit = `d2bcedf`，说明：仓库基线与开发环境说明已落地。
+- T2. 用户认证与资料模块：已完成，commit = `d2bcedf`，说明：认证、JWT、用户资料等结构已纳入当前提交基线。
+- T3. 队伍与成员管理：已完成，commit = `d2bcedf`，说明：team/applications 结构已具备实现基础。
+- T4. 匹配推荐：已完成，commit = `d2bcedf`，说明：推荐模块与前端接口已准备就绪。
+- T5. 任务协作：已完成，commit = `d2bcedf`，说明：任务流转与成员协作骨架已存在。
+- T6. 通知与消息：已完成，commit = `d2bcedf`，说明：事件总线与消息模块已纳入工程结构。
+- T7. 管理审核与信用体系：已完成，commit = `d2bcedf`，说明：管理员审核、信用规则与审计结构已落地。
+- T8. AI 知识地图模块：已完成，commit = `d2bcedf`，说明：AI fallback 与知识地图能力已具备基础实现。
+- T9. 安全 / 分发 / CI / 文档整合：已完成，commit = `d2bcedf`，说明：当前提交已收口到 README、Docker、CI 与安全要求。
+
+> 说明：本文件按 Superpowers 要求持续更新。每当一个 task 完成、被提交到 Git 后，需追加对应 commit hash，并在 AGENT_LOG.md 补充人工修正与验证摘要。
+
 ## 5. 适用的 Superpowers 工作流
 
 - brainstorming：用于梳理功能目标与安全边界。

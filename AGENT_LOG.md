@@ -41,3 +41,11 @@
 - Subagent output: 归纳出 README 必须包含 7 大章节，且必须强调从零运行。
 - Human intervention: 重写 README，补充 `Dockerfile` / `.gitlab-ci.yml` / `.dockerignore` 和线上入口说明。
 - Lesson: README 不是说明文档，是证明“别人能否从零运行”的工程证据。
+
+## 2026-08-14 13:35
+- Task: T9. 提交与远程同步
+- Triggered skill: finishing-a-development-branch
+- Key prompt: “按 task 顺序提交并记录 commit hash，确保每个 worktree / task 都有可追踪的历史，并同步到目标 GitHub 仓库。”
+- Subagent output: 生成基线提交并确认项目文件已准备就绪，后续使用 git push 同步到 `Float-Emeror/summer`。
+- Human intervention: 规范提交分支、补充 `PLAN.md` 中的 commit hash 记录，并确保真实凭据未进入仓库；对已存在的 .env 暂不提交。
+- Lesson: 最终的可审计性来自“可追踪的任务历史 + 安全检查”，而不只是代码本身。
