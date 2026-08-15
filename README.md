@@ -8,4 +8,3 @@
 - git -C "C:/Users/fusheng/Desktop/code/summer" switch project-main
 - 或者：
 - git -C "C:/Users/fusheng/Desktop/code/summer" switch task-t9
-- 如果你想要“像项目主线一样”的代码，通常优先看 project-main。
