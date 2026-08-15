@@ -1,4 +1,5 @@
 # summer
+##操作包括：
 -你可以这样拿到完整代码
 -先更新并查看分支：
 -git -C "C:/Users/fusheng/Desktop/code/summer" fetch --all --prune
