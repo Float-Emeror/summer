@@ -30,4 +30,19 @@ describe('authCache', () => {
     expect(authCache.getSession()).toBeNull();
     expect(localStorage.getItem('accessToken')).toBeNull();
   });
+
+  it('synchronizes a stale standalone access token with the session', () => {
+    localStorage.setItem('campus.auth.session', JSON.stringify(session));
+    localStorage.setItem('accessToken', 'expired-or-other-session-token');
+
+    expect(authCache.getSession()).toEqual(session);
+    expect(localStorage.getItem('accessToken')).toBe(session.accessToken);
+  });
+
+  it('clears a standalone token when no session exists', () => {
+    localStorage.setItem('accessToken', 'expired-token');
+
+    expect(authCache.getSession()).toBeNull();
+    expect(localStorage.getItem('accessToken')).toBeNull();
+  });
 });

@@ -51,7 +51,7 @@ export class AiService {
     no_api_key: '未配置可用的 API Key',
     upstream_non_200: '上游模型服务返回非 200 状态',
     empty_content: '上游模型返回空内容',
-    request_error: '调用上游模型时发生网络或运行时错误',
+    request_error: '上游模型服务当前不可达，已使用本地回退结果',
   };
 
   async importProject(userId: string, sourcePath: string, projectName?: string) {
@@ -566,7 +566,8 @@ export class AiService {
         ? '这是启动/运行类问题。你必须优先回答“可执行命令 → 入口文件 → 必要环境变量/端口”。如果上下文里存在启动脚本或入口文件，不要先讲项目概览，也不要先引用 README。'
         : '优先使用源码扫描摘要和上下文，README 只作为补充。',
       startupSignals.length > 0 ? `启动信号：\n${startupSignals.join('\n')}` : '启动信号：无',
-      '代码扫描摘要：',
+      '源码证据优先级最高。源码证据中的命令、脚本和代码行为高于知识文档中的概括；如果源码证据没有相关信息，再使用资料上下文。',
+      '源码证据：',
       codeContext.length > 0 ? codeContext.join('\n') : '无代码摘要',
       '资料上下文：',
       context,
@@ -643,8 +644,59 @@ export class AiService {
         }
       }
       const prefixedStartup = startupContext.map((line) => `启动信号: ${line}`);
-      return [...prefixedStartup, ...summaries].slice(0, 20);
+      const sourceEvidence = question ? this.extractSourceEvidence(root, files, question) : [];
+      return [...prefixedStartup, ...sourceEvidence, ...summaries].slice(0, 20);
     });
+  }
+
+  private extractSourceEvidence(root: string, files: string[], question: string) {
+    const startupQuestion = this.isStartupQuestion(question);
+    const priorityFiles = startupQuestion
+      ? [
+          'package.json',
+          'apps/package.json',
+          'backend/package.json',
+          'frontend/package.json',
+          'scripts/start-dev.ps1',
+          'apps/scripts/start-dev.ps1',
+          'docker-compose.yml',
+          'apps/docker-compose.yml',
+          'Dockerfile',
+        ]
+      : files;
+    const orderedFiles = Array.from(new Set([...priorityFiles, ...files])).filter((relativePath) =>
+      fs.existsSync(path.join(root, relativePath)),
+    );
+    const tokens = this.extractTokens(question);
+    const evidence: string[] = [];
+
+    for (const relativePath of orderedFiles.slice(0, startupQuestion ? 9 : 10)) {
+      let lines: string[];
+      try {
+        lines = fs.readFileSync(path.join(root, relativePath), 'utf8').split(/\r?\n/);
+      } catch {
+        continue;
+      }
+
+      const selected = lines
+        .map((line, index) => ({ line: line.trim(), index: index + 1 }))
+        .filter(({ line }) => line.length > 0)
+        .filter(({ line }) => {
+          if (startupQuestion) {
+            return /scripts|pnpm|npm|yarn|docker|compose|nest|vite|node|mysql|prisma|port|start|dev|build|listen|app\.listen/i.test(line);
+          }
+          const normalized = line.toLowerCase();
+          return tokens.some((token) => normalized.includes(token));
+        })
+        .slice(0, startupQuestion ? 12 : 8);
+
+      if (selected.length > 0) {
+        evidence.push(`源码 ${relativePath}: ${selected.map(({ line, index }) => `[L${index}] ${line.slice(0, 220)}`).join(' | ')}`);
+      }
+      if (evidence.length >= 12) break;
+    }
+
+    return evidence;
   }
 
   private isStartupQuestion(question: string) {
@@ -1131,10 +1183,15 @@ export class AiService {
 
     const model = this.config.get<string>('AI_MODEL') || 'gpt-4o-mini';
     const endpoint = this.config.get<string>('AI_GATEWAY_URL') || 'https://api.openai.com/v1/chat/completions';
+    const configuredTimeoutMs = Number(this.config.get<string>('AI_REQUEST_TIMEOUT_MS') || 60000);
+    const timeoutMs = Number.isFinite(configuredTimeoutMs) && configuredTimeoutMs > 0 ? configuredTimeoutMs : 60000;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
       const response = await fetch(endpoint, {
         method: 'POST',
+        signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${apiKey}`,
@@ -1142,6 +1199,7 @@ export class AiService {
         body: JSON.stringify({
           model,
           temperature: 0.2,
+          max_tokens: 3000,
           messages: [
             { role: 'system', content: '你是可靠的软件工程知识助手。' },
             { role: 'user', content: prompt },
@@ -1179,13 +1237,16 @@ export class AiService {
         fallbackDetail: null,
       };
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
       return {
         content: fallback,
         mode: 'local-fallback',
         fallbackReason: 'request_error',
-        fallbackDetail: `provider=${normalized}; endpoint=${endpoint}; model=${model}; error=${message}`,
+        fallbackDetail: `provider=${normalized}; endpoint=${endpoint}; model=${model}; reason=${
+          error instanceof DOMException && error.name === 'AbortError' ? 'timeout' : 'upstream_unreachable'
+        }`,
       };
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 }

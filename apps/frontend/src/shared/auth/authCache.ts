@@ -15,14 +15,15 @@ export const authCache = {
   getSession() {
     const session = readJson<AuthResponse | null>(sessionKey, null);
     if (!session?.accessToken) {
-      if (session) {
-        authCache.clearSession();
-      }
+      authCache.clearSession();
       return null;
     }
     if (session.accessToken.startsWith('demo.')) {
       authCache.clearSession();
       return null;
+    }
+    if (localStorage.getItem('accessToken') !== session.accessToken) {
+      localStorage.setItem('accessToken', session.accessToken);
     }
     return session;
   },

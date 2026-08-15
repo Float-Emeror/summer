@@ -116,7 +116,9 @@ docker run -p 3000:3000 -p 5173:5173 --env-file apps/.env campus-team-platform
 
 ```env
 JWT_SECRET="replace-with-a-local-development-secret"
-OPENAI_API_KEY=""
+OPENAI_API_KEY="在智能软件教学科研 GAI Token Hub 创建的 API Key"
+AI_GATEWAY_URL="https://njusehub.info/v1/chat/completions"
+AI_MODEL="kimi-k2.7-code"
 AI_CONFIG_MASTER_KEY="replace-with-a-long-random-secret"
 MAIL_PASS="your-smtp-password"
 ```
@@ -126,6 +128,7 @@ MAIL_PASS="your-smtp-password"
 - 不要在终端命令行中直接执行 `export OPENAI_API_KEY=...`
 - 不要将真实 key 提交到 Git 历史中
 - 日志中不输出明文密钥，API 返回前也需进行脱敏
+- AI 默认使用智能软件教学科研 GAI Token Hub；请先在 https://njusehub.info/keys 创建 API Key
 
 ## 已知限制
 

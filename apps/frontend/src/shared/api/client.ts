@@ -7,7 +7,7 @@ const baseURL =
     : DEFAULT_API_BASE_URL;
 
 const configuredTimeout = Number(import.meta.env.VITE_API_TIMEOUT_MS);
-const requestTimeoutMs = Number.isFinite(configuredTimeout) && configuredTimeout > 0 ? configuredTimeout : 12000;
+const requestTimeoutMs = Number.isFinite(configuredTimeout) && configuredTimeout > 0 ? configuredTimeout : 75000;
 
 export class ApiError extends Error {
   constructor(

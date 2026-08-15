@@ -205,9 +205,12 @@ export function AiWorkbenchPage() {
   }
 
   async function onGenerateSummary() {
-    if (!selectedId) return;
+    if (!selectedId || !selectedProject) {
+      setMessage('请先选择项目。');
+      return;
+    }
     setBusyAction('generate');
-    setMessage('');
+    setMessage('正在扫描项目并请求 Token Hub，请稍候...');
     try {
       const result = await aiApi.generateKnowledge(selectedId, 'openai');
       setLastGeneration(result);
@@ -341,7 +344,12 @@ export function AiWorkbenchPage() {
                 <h2><Wand2 size={16} /> 知识摘要</h2>
                 <p className="ai-summary-description">基于当前项目源代码生成高质量知识摘要，并支持后续项目问答。</p>
               </div>
-              <button type="button" className="button-link secondary" onClick={onGenerateSummary} disabled={busyAction === 'generate'}>
+                      <button
+                        type="button"
+                        className="button-link secondary"
+                        onClick={onGenerateSummary}
+                        disabled={!selectedProject || busyAction === 'generate'}
+                      >
                 {busyAction === 'generate' ? '生成中...' : '生成知识摘要'}
               </button>
             </div>
