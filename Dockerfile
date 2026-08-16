@@ -1,7 +1,8 @@
 FROM node:20-alpine AS base
 WORKDIR /app
 
-RUN corepack enable
+RUN corepack enable \
+    && apk add --no-cache python3 make g++
 
 COPY apps/package.json apps/pnpm-lock.yaml apps/pnpm-workspace.yaml ./apps/
 COPY apps/backend/package.json ./apps/backend/
