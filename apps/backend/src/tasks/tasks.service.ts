@@ -60,6 +60,23 @@ export class TasksService {
     const task = await this.getValidTask(taskId);
     const member = await this.verifyTeamMember(task.teamId, userId);
 
+    const allowedTransitions: Record<TaskStatus, TaskStatus[]> = {
+      TODO: ['DOING', 'DONE'],
+      DOING: ['DONE'],
+      DONE: ['CONFIRMED'],
+      CONFIRMED: [],
+    };
+
+    if (task.status !== 'TODO' && task.status !== 'DOING' && task.status !== 'DONE' && task.status !== 'CONFIRMED') {
+      throw new BadRequestException('非法状态转移');
+    }
+
+    const currentStatus = task.status as TaskStatus;
+    const validNextStatuses = allowedTransitions[currentStatus] ?? [];
+    if (!validNextStatuses.includes(status)) {
+      throw new BadRequestException('非法状态转移');
+    }
+
     if (member.role !== 'OWNER') {
       if (status === 'CONFIRMED') {
         throw new ForbiddenException('只有队长可以进行最终的 CONFIRMED 确认');
