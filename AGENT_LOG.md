@@ -49,3 +49,39 @@
 - Subagent output: 生成基线提交并确认项目文件已准备就绪，后续使用 git push 同步到 `Float-Emeror/summer`。
 - Human intervention: 规范提交分支、补充 `PLAN.md` 中的 commit hash 记录，并确保真实凭据未进入仓库；对已存在的 .env 暂不提交。
 - Lesson: 最终的可审计性来自“可追踪的任务历史 + 安全检查”，而不只是代码本身。
+
+## 2026-08-14 14:20
+- Task: T2. 登录前邮箱验证门禁修复
+- Triggered skill: test-driven-development
+- Key prompt: “在 auth 模块中补一个失败测试，验证 EMAIL_VERIFICATION_REQUIRED=true 时未验证用户不能登录，并实现最小修复。”
+- Subagent output: 先红为止，新增回归测试失败，确认登录未校验邮箱验证状态；随后通过最小修复让用例变绿。
+- Human intervention: 将校验条件落在 `AuthService.login`，确保只有在 `EMAIL_VERIFICATION_REQUIRED` 开启时才阻止未验证用户登录；同时保留已验证/关闭验证的正常登录路径。
+- Verification: `cd apps && corepack pnpm --filter @campus-team/api test -- --runInBand --watch=false` -> 2/2 tests passed.
+- Commit: `a6d7416d6c3f7597eb7a2f3f3e9465ae816c3e19`
+
+## 2026-08-14 15:10
+- Task: T3. 队伍审批与重复加入校验
+- Triggered skill: test-driven-development
+- Key prompt: “在 applications 模块中补一个失败测试，确认队伍已满或已有同一用户时，不允许审批通过，且不能重复加入。”
+- Subagent output: 先红为止，新增回归测试暴露审批通过时没有检查队伍容量和重复成员；随后实现最小修复。
+- Human intervention: 在 `ApplicationsService.reviewApplication` 中增加 `team.members.length >= maxMembers` 与 `alreadyJoined` 校验，确保审批流不破坏成员唯一性和容量边界。
+- Verification: `cd apps && corepack pnpm --filter @campus-team/api test -- --runInBand --watch=false` -> 6/6 tests passed.
+- Commit: `5f954e92f63b1d2330655e7aed029fd7812101d6`
+
+## 2026-08-14 15:50
+- Task: T4. 默认推荐排序修复
+- Triggered skill: test-driven-development
+- Key prompt: “在 match 模块中补一个失败测试，确认未传 skills 时应保留默认推荐排序，而不是把所有结果过滤掉。”
+- Subagent output: 在空技能筛选场景下，推荐结果被错误过滤为空；随后修正过滤逻辑，保留默认排序与排序稳定性。
+- Human intervention: 调整 `recommendTeamsForUser` 和 `recommendUsersForUser` 的过滤条件，只有在显式技能过滤时才要求 `matchScore > 0`；未指定筛选时保留默认列表。
+- Verification: `cd apps && corepack pnpm --filter @campus-team/api test -- --runInBand --watch=false` -> 8/8 tests passed.
+- Commit: `139f0b858c35cb253a21b0b3439e5e9ddad10aca`
+
+## 2026-08-14 17:10
+- Task: T5. 任务状态合法性与队长确认修复
+- Triggered skill: test-driven-development
+- Key prompt: “在 tasks 模块中补一个失败测试，确认非法状态转移和非队长确认必须被拒绝，并实现最小修复。”
+- Subagent output: 先红为止，任务状态转换缺少合法性校验；随后增加状态转移表和 owner-only 检查。
+- Human intervention: 在 `TasksService.updateTaskStatus` 中加入 `allowedTransitions` 校验，并保留成员/负责人权限限制；同时补充 `deleteTask` 的队长控制约束。
+- Verification: `cd apps && corepack pnpm --filter @campus-team/api test -- --runInBand --watch=false` -> 9/9 tests passed.
+- Commit: `5c4a6ab8b1c150acb3c1661abfdb30f2bd34ab0d`

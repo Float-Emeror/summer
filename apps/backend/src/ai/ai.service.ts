@@ -1170,7 +1170,7 @@ export class AiService {
   }
 
   private async generateWithFallback(provider: string, prompt: string, fallback: string): Promise<AiGenerationOutcome> {
-    const normalized = provider.toLowerCase();
+    const normalized = (provider || '').trim().toLowerCase() || 'unknown';
     const apiKey = await this.resolveProviderKey(normalized);
     if (!apiKey) {
       return {

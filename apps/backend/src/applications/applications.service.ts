@@ -59,7 +59,18 @@ export class ApplicationsService {
     if (application.status !== 'PENDING') {
       throw new BadRequestException('该申请已被处理过');
     }
-    
+
+    if (status === 'APPROVED') {
+      const teamMembers = Array.isArray((application.team as any).members) ? (application.team as any).members : [];
+      const alreadyJoined = teamMembers.some((member: any) => member.userId === application.applicantId);
+      if (alreadyJoined) {
+        throw new BadRequestException('该用户已经在队伍中，无法重复加入');
+      }
+      if (teamMembers.length >= (application.team as any).maxMembers) {
+        throw new BadRequestException('该队伍人数已满');
+      }
+    }
+
     const result = await this.appsRepo.reviewApplication(applicationId, status);
 
     if (status === 'APPROVED') {
