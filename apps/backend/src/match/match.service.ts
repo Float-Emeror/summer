@@ -42,7 +42,12 @@ export class MatchService {
 
     return teams
       .map((team) => this.withTeamScore(team, skillsForScoring))
-      .filter((team) => requestedSkills.length > 0 || userSkills.length === 0 || team.matchScore > 0)
+      .filter((team) => {
+        if (requestedSkills.length > 0) {
+          return team.matchScore > 0;
+        }
+        return true;
+      })
       .sort((a, b) => b.matchScore - a.matchScore)
       .slice(0, 10);
   }
@@ -96,7 +101,12 @@ export class MatchService {
           matchedSkills,
         };
       })
-      .filter((user) => requestedSkills.length > 0 || userSkills.length === 0 || user.matchScore > 0)
+      .filter((user) => {
+        if (requestedSkills.length > 0) {
+          return user.matchScore > 0;
+        }
+        return true;
+      })
       .sort((a, b) => b.matchScore - a.matchScore)
       .slice(0, 10);
   }
