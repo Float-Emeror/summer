@@ -84,6 +84,10 @@ export class AuthService {
       throw new UnauthorizedException('账号已被禁用，请联系管理员');
     }
 
+    if (this.isEmailVerificationRequired() && !(user as AuthUser).emailVerifiedAt) {
+      throw new UnauthorizedException('请先验证邮箱后再登录');
+    }
+
     const isMatch = await bcrypt.compare(dto.password, user.passwordHash);
     if (!isMatch) {
       throw new UnauthorizedException('邮箱或密码错误');
