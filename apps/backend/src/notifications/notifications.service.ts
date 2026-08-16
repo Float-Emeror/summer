@@ -22,6 +22,11 @@ export class NotificationsService {
 
   @OnEvent(EventNames.NOTIFICATION_CREATE)
   async handleNotificationEvent(payload: NotificationCreateEvent) {
+    if (!payload?.userId?.trim()) {
+      this.logger.warn(`通知事件缺少目标用户，已忽略：${payload?.type ?? 'UNKNOWN'}`);
+      return;
+    }
+
     const notification = await this.notifRepo.create({
       userId: payload.userId,
       type: payload.type as NotificationType,
